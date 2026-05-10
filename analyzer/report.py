@@ -5,6 +5,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
 from reportlab.lib.enums import TA_CENTER
+import io
 
 def get_file_hashes(filepath):
     """Calculates MD5 and SHA256 hashes of a file."""
@@ -29,19 +30,11 @@ def draw_page_number(canvas, doc):
     canvas.restoreState()
 
 def generate_report(filepath, metadata, stego):
-    # 2. Automatically create the "reports/" folder if it doesn't exist
-    # Create it in the current working directory
-    reports_dir = os.path.abspath("reports")
-    os.makedirs(reports_dir, exist_ok=True)
-    
-    # 3. Save the PDF with filename like: forensic_20250509_143022.pdf
     now = datetime.datetime.now()
-    timestamp = now.strftime("%Y%m%d_%H%M%S")
-    pdf_filename = f"forensic_{timestamp}.pdf"
-    pdf_path = os.path.join(reports_dir, pdf_filename)
     
     # Setup Document
-    doc = SimpleDocTemplate(pdf_path, pagesize=letter,
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter,
                             rightMargin=72, leftMargin=72,
                             topMargin=72, bottomMargin=50)
     
@@ -115,7 +108,8 @@ def generate_report(filepath, metadata, stego):
     Story.append(Paragraph(f"<b>MD5:</b> {md5_hash}", styles['Normal']))
     Story.append(Paragraph(f"<b>SHA256:</b> {sha256_hash}", styles['Normal']))
     
-    # 1. & 6. Build PDF and return the path
+    # Build PDF and return the buffer
     doc.build(Story, onFirstPage=draw_page_number, onLaterPages=draw_page_number)
     
-    return pdf_path
+    buffer.seek(0)
+    return buffer

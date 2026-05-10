@@ -1,5 +1,7 @@
 import os
 import uuid
+import base64
+import io
 from flask import Flask, request, jsonify, render_template, send_file
 
 # 1. Import analyzer functions
@@ -39,13 +41,16 @@ def analyze():
         # Run analyses
         metadata = extract_metadata(filepath)
         stego_results = detect_steganography(filepath)
-        report_path = generate_report(filepath, metadata, stego_results)
+        report_buffer = generate_report(filepath, metadata, stego_results)
+        
+        # Convert PDF buffer to base64 string
+        report_base64 = base64.b64encode(report_buffer.getvalue()).decode('utf-8')
         
         # Return JSON response
         return jsonify({
             "metadata": metadata,
             "steganography": stego_results,
-            "report": report_path
+            "report": report_base64
         })
 
 # ROUTE 3: GET /download/<path:filename>
@@ -58,6 +63,28 @@ def download(filename):
         return send_file(filename, as_attachment=True)
     except Exception as e:
         return jsonify({"error": "File not found"}), 404
+
+# ROUTE 4: POST /download-report
+@app.route('/download-report', methods=['GET', 'POST'])
+def download_report():
+    try:
+        # Get base64 string from either POST form or GET query params
+        base64_pdf = request.values.get('pdf_data')
+        if not base64_pdf:
+            return jsonify({"error": "No PDF data provided"}), 400
+            
+        pdf_data = base64.b64decode(base64_pdf)
+        buffer = io.BytesIO(pdf_data)
+        buffer.seek(0)
+        
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name="forensic_report.pdf",
+            mimetype="application/pdf"
+        )
+    except Exception as e:
+        return jsonify({"error": "Invalid PDF data"}), 400
 
 # 4. Global error handler
 @app.errorhandler(Exception)
