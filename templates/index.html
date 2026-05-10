@@ -477,18 +477,18 @@
             // 3. Set Report Download Link
             if (data.report) {
                 downloadBtn.href = '#';
-                downloadBtn.onclick = function(e) {
+                downloadBtn.onclick = function (e) {
                     e.preventDefault();
-                    
+
                     const form = document.createElement('form');
                     form.method = 'POST';
                     form.action = '/download-report';
-                    
+
                     const input = document.createElement('input');
                     input.type = 'hidden';
                     input.name = 'pdf_data';
                     input.value = data.report;
-                    
+
                     form.appendChild(input);
                     document.body.appendChild(form);
                     form.submit();
