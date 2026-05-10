@@ -2,3 +2,4 @@ flask
 pillow
 reportlab
 python-magic-bin
+gunicorn
